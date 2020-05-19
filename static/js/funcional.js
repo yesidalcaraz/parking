@@ -1,15 +1,16 @@
 var input = document.getElementById('direccion');
 var radio = 500;
 var radioExt = 800;
+var markerCluster;
+
+
 
 function cargarMapa() {
-    // Ubicacion actual
     var madrid = {
         lat: 40.4381311,
         lng: -3.8196228
     };
 
-    // Aqui se centrar el mapa
     var map = new google.maps.Map(
         document.getElementById('mapa'), {
             zoom: 10,
@@ -28,25 +29,23 @@ function cargarMapa() {
 
         });
 
-    // El marcador, posicionado en  la ubicacion dada
     var marker = new google.maps.Marker({
-        // position: madrid,
-        map: map
+        map: map,
+
     });
 
     var searchBox = new google.maps.places.SearchBox(input);
-    //autocompletar(marker, map);    
     cajabuscar(map, marker, searchBox);
-
 }
+
+
+
 
 
 function ConsultaAjax(lat, lng, map) {
 
     map.setCenter(new google.maps.LatLng(lat, lng));
-    //radio in metros
 
-    /* crea el circulo basado en el radio dado */
     var circle = new google.maps.Circle({
         strokeColor: 'green',
         strokeOpacity: 0.1,
@@ -70,17 +69,14 @@ function ConsultaAjax(lat, lng, map) {
     });
 
 
-    //Nuevos limites del circulo
     var bounds = circle.getBounds();
 
-    /* Ajuste el mapa al tamaño del círculo. Será un poco más grande que el círculo ya que la API agrega un poco de relleno */
     map.fitBounds(bounds);
 
     var southWest = bounds.getSouthWest();
     var northEast = bounds.getNorthEast();
 
 
-    //obtener lat y longitd de los limites para enviarlo a la view
     var minLat = southWest.lat();
     var minLon = southWest.lng();
 
@@ -98,9 +94,9 @@ function ConsultaAjax(lat, lng, map) {
     };*/
 
     var icon = {
-        url: "/static/img/car2.png", // url
-        scaledSize: new google.maps.Size(28, 40), // tamaño a escala
-        origin: new google.maps.Point(0, 0), // originen
+        url: "/static/img/car2.png",
+        scaledSize: new google.maps.Size(32, 40),
+        origin: new google.maps.Point(0, 0),
         //anchor: new google.maps.Point(0, 32)
     };
 
@@ -116,27 +112,26 @@ function ConsultaAjax(lat, lng, map) {
         type: 'get',
         datatype: 'json',
 
-        success: function(data) {
+        success: function (data) {
 
             console.log("consulta hecha")
             var infowindow = new google.maps.InfoWindow;
             var marker, i;
 
             for (var i = 0; i < data.length; i++) {
-                //pinta los marcadores
                 marker = new google.maps.Marker({
                     position: {
                         lat: data[i].fields.lat,
                         lng: data[i].fields.lon
                     },
                     map: map,
-                    icon: icon
+                    icon: icon,
+
                 });
 
 
-                //escucha un evento  y tiene una función para llamar cuando ocurre el evento especificado. en este caso cuando ocurre el evento click en el marcador, pinta el globo con la informacion de dicho marcador
-                google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                    return function() {
+                google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                    return function () {
                         infowindow.setContent("<ul class='nav nav-tabs'>" +
                             "<li class='nav-item'>" +
                             "<a class='nav-link ' href='#'>Parking</a>" +
@@ -168,28 +163,23 @@ function ConsultaAjax(lat, lng, map) {
                             "<li class='list-group-item'><b>Car_pc:</b>" + " " + data[i].fields.car_pc + "</li>" +
                             "<li class='list-group-item'><b>Human_pc:</b>" + " " + data[i].fields.human_pc + "</li>" +
                             "<li class='list-group-item'><b>Slug:</b>" + " " + data[i].fields.slug + "</li>" +
-                            "<li class='list-group-item'><b>Booking Url:</b>" + " " + "<a target='_blank' href=" + data[i].fields.booking_url + ">" + data[i].fields.booking_url + "</a></li >" + "</ul>" + "</li>" +"</ul>");
+                            "<li class='list-group-item'><b>Booking Url:</b>" + " " + "<a target='_blank' href=" + data[i].fields.booking_url + ">" + data[i].fields.booking_url + "</a></li >" + "</ul>" + "</li>" + "</ul>");
                         infowindow.open(map, marker);
                     }
                 })(marker, i));
             }
-
         },
-        error: function(data) {
-            console.log("consulta" + data.booking.timestamp);
-        }
-
-
     });
 }
+
+
 
 
 function ConsultaAjaxBooking(lat, lng, map) {
 
     map.setCenter(new google.maps.LatLng(lat, lng));
-    
 
-    /* crea el circulo basado en el radio dado */
+
     var circle = new google.maps.Circle({
         strokeColor: 'green',
         strokeOpacity: 0.1,
@@ -213,17 +203,14 @@ function ConsultaAjaxBooking(lat, lng, map) {
     });
 
 
-    //Nuevos limites del circulo
     var bounds = circle.getBounds();
 
-    /* Ajuste el mapa al tamaño del círculo. Será un poco más grande que el círculo ya que la API agrega un poco de relleno */
     map.fitBounds(bounds);
 
     var southWest = bounds.getSouthWest();
     var northEast = bounds.getNorthEast();
 
 
-    //obtener lat y longitd de los limites para enviarlo a la view
     var minLat = southWest.lat();
     var minLon = southWest.lng();
 
@@ -241,10 +228,12 @@ function ConsultaAjaxBooking(lat, lng, map) {
     };*/
 
     var icon2 = {
-        url: "/static/img/pall.png", // url
-        scaledSize: new google.maps.Size(28, 28), // tamaño a escala
-        origin: new google.maps.Point(0, 0), // originen
-        anchor: new google.maps.Point(2, 45)
+        url: "/static/img/pall.png",
+        scaledSize: new google.maps.Size(28, 28),
+        origin: new google.maps.Point(0, 0),
+        anchor: new google.maps.Point(2, 45),
+        draggable: true,
+        title: "Puedes Moverme!"
     };
 
     $.ajax({
@@ -257,26 +246,35 @@ function ConsultaAjaxBooking(lat, lng, map) {
         },
         url: '/BookingsliteSearchAjax/',
         type: 'get',
-        success: function(data) {
+        success: function (data) {
             console.log("consulta hecha con BookingsliteSearchAjax")
             var infowindow = new google.maps.InfoWindow;
             var marker, i;
-
+            var marcadores = [];
             for (var i = 0; i < data.length; i++) {
-                //pinta los marcadores
                 marker = new google.maps.Marker({
                     position: {
                         lat: data[i].fields.lat,
-                        lng: data[i].fields.lon
+                        lng: data[i].fields.lon,
+
                     },
                     map: map,
-                    icon: icon2
+                    icon: icon2,
+                    draggable: true,
+
+
+                });
+
+                marcadores.push(marker);
+                var markerCluster = new MarkerClusterer(map, marcadores, {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+                    zoomOnClick: false,
+                    title: "Reservas de Parkings"
                 });
 
 
-                //escucha un evento  y tiene una función para llamar cuando ocurre el evento especificado. en este caso cuando ocurre el evento click en el marcador, pinta el globo con la informacion de dicho marcador
-                google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                    return function() {
+                google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                    return function () {
                         infowindow.setContent(
                             "<a class='nav-link ' href='#'>Booking</a>" +
                             "<ul id='datoPop' class='list-group list-group-flush'>" +
@@ -294,22 +292,22 @@ function ConsultaAjaxBooking(lat, lng, map) {
                             "</ul>");
                         infowindow.open(map, marker);
                     }
-                })(marker, i));
+                })(marker, i, markerCluster));
+
             }
-
         },
-
     });
 }
 
 
 
+
 function cajabuscar(map, marker, searchBox) {
-    map.addListener('bounds_changed', function() {
+    map.addListener('bounds_changed', function () {
         searchBox.setBounds(map.getBounds());
     });
 
-    document.getElementById('miboton').onclick = function() {
+    document.getElementById('miboton').onclick = function () {
 
         google.maps.event.trigger(input, 'focus', {})
         google.maps.event.trigger(input, 'keydown', {
@@ -319,19 +317,19 @@ function cajabuscar(map, marker, searchBox) {
     };
 
     var markers = [];
-    searchBox.addListener('places_changed', function() {
+    searchBox.addListener('places_changed', function () {
         var places = searchBox.getPlaces();
         if (places.length == 0) {
             return;
         }
 
-        markers.forEach(function(marker) {
+        markers.forEach(function (marker) {
             marker.setMap(null);
         });
         markers = [];
 
         var bounds = new google.maps.LatLngBounds();
-        places.forEach(function(place) {
+        places.forEach(function (place) {
             if (!place.geometry) {
                 console.log("Returned place contains no geometry buscador");
                 return;
@@ -339,7 +337,8 @@ function cajabuscar(map, marker, searchBox) {
 
             markers.push(new google.maps.Marker({
                 map: map,
-                position: place.geometry.location
+                position: place.geometry.location,
+                draggable: true,
             }));
 
             if (place.geometry.viewport) {
@@ -359,34 +358,61 @@ function cajabuscar(map, marker, searchBox) {
 
             ConsultaAjax(lat, lng, map);
             ConsultaAjaxBooking(lat, lng, map);
+            ConsultaHoy(lat, lng, map);
         });
-
-
     });
-
 }
 
-//// consulta por dias en desarrollo
 
-/*function ConsultaHoy(lat, lng, map) {
+
+
+function ConsultaHoy(lat, lng, map) {
+
 
     map.setCenter(new google.maps.LatLng(lat, lng));
 
 
-    /*var icon = {
-        path: fontawesome.markers.CAR,
-        scale: 0.3,
-        strokeWeight: 0.2,
-        strokeColor: 'black',
-        strokeOpacity: 1,
-        fillColor: '#a71d21',
-        fillOpacity: 0.7
-    };
+    var circle = new google.maps.Circle({
+        strokeColor: 'green',
+        strokeOpacity: 0.1,
+        strokeWeight: 1,
+        fillColor: '#3ef947',
+        fillOpacity: 0.29,
+        center: map.getCenter(),
+        radius: radio,
+        map: map,
+    });
+
+    var circle = new google.maps.Circle({
+        strokeColor: 'red',
+        strokeOpacity: 0.1,
+        strokeWeight: 1,
+        fillColor: 'red',
+        fillOpacity: 0.1,
+        center: map.getCenter(),
+        radius: radioExt,
+        map: map,
+    });
+
+
+    var bounds = circle.getBounds();
+
+    map.fitBounds(bounds);
+
+    var southWest = bounds.getSouthWest();
+    var northEast = bounds.getNorthEast();
+
+
+    var minLat = southWest.lat();
+    var minLon = southWest.lng();
+
+    var maxLat = northEast.lat();
+    var maxLon = northEast.lng();
 
     var icon2 = {
-        url: "/static/img/Z.png", // url
-        scaledSize: new google.maps.Size(28, 28), // tamaño a escala
-        origin: new google.maps.Point(0, 0), // originen
+        url: "/static/img/hoy.png",
+        scaledSize: new google.maps.Size(28, 28),
+        origin: new google.maps.Point(0, 0),
         anchor: new google.maps.Point(2, 45)
     };
 
@@ -400,47 +426,116 @@ function cajabuscar(map, marker, searchBox) {
         },
         url: '/BookingsliteSearchAjax/',
         type: 'get',
-        success: function(data) {
-            console.log("consulta hecha con BookingsliteSearchAjax")
+        success: function (data) {
+            console.log("consulta hecha con Bookingtime")
             var infowindow = new google.maps.InfoWindow;
             var marker, i;
 
-            for (var i = 0; i < data.length; i++) {
-                //pinta los marcadores
-                marker = new google.maps.Marker({
-                    position: {
-                        lat: data[i].fields.lat,
-                        lng: data[i].fields.lon
-                    },
-                    map: map,
-                    icon: icon2
-                });
+            //FECHA DE RESERVA CON FORMATO YY/MM/DD ESTA DENTRO DEL BUCLE
+            // var date = new Date(data[i].fields.timestamp);
+            // var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
+            $('#select_sh').click(function () {
+                var dia = $('#select_sh').val();
+                // console.log("fecha de la primera:" + dia)
 
 
-                //escucha un evento  y tiene una función para llamar cuando ocurre el evento especificado. en este caso cuando ocurre el evento click en el marcador, pinta el globo con la informacion de dicho marcador
-                google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                    return function() {
-                        infowindow.setContent(
-                            "<a class='nav-link ' href='#'>Booking</a>" +
-                            "<ul id='datoPop' class='list-group list-group-flush'>" +
+                if (dia == 'uno') {
+                    var hoy = new Date();
+                    console.log("entro al IF del dia uno:" + dia);
+                    var icon2 = {
+                        url: "/static/img/hoy.png",
+                        scaledSize: new google.maps.Size(28, 28),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(2, 45)
+                    };
+                } else if (dia == 'dos') {
+                    var Hoy = new Date();
+                    var hoy = new Date(Hoy.getTime() - 24 * 60 * 60 * 1000);
+                    console.log("entro al IF del dia dos:" + hoy);
+                    var icon2 = {
+                        url: "/static/img/ayer.",
+                        scaledSize: new google.maps.Size(28, 28),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(2, 45)
+                    };
 
-                            "<li class='list-group-item'><b>timestamp:</b>" + " " + data[i].fields.timestamp + "</li>" +
-                            "<li class='list-group-item'><b>when:</b>" + " " + data[i].fields.when + "</li>" +
-                            "<li class='list-group-item'><b>short_code:</b>" + " " + data[i].fields.short_code + "</li>" +
-                            "<li class='list-group-item'><b>lat:</b>" + " " + data[i].fields.lat + "</li>" +
-                            "<li class='list-group-item'><b>lon:</b>" + " " + data[i].fields.lon + "</li>" +
-                            "<li class='list-group-item'><b>position:</b>" + " " + data[i].fields.position + "</li>" +
-                            "<li class='list-group-item'><b>parking_found:</b>" + " " + data[i].fields.parking_found + "</li>" +
-                            "<li class='list-group-item'><b>selected_name:</b>" + " " + data[i].fields.selected_name + "</li>" +
-                            "<li class='list-group-item'><b>selected_lmpPID:</b>" + " " + data[i].fields.selected_lmpPID + "</li>" +
-                            "<li class='list-group-item'><b>trello_url:</b>" + " " + data[i].fields.trello_url + "</li>" +
-                            "</ul>");
-                        infowindow.open(map, marker);
+                } else if (dia == 'tres') {
+                    var Hoy = new Date();
+                    var hoy = new Date((Hoy.getTime() - 24 * 60 * 60 * 1000) - 24 * 60 * 60 * 1000);
+                    console.log("entro al IF del tres:" + hoy);
+                    var icon2 = {
+                        url: "/static/img/tresdias.png",
+                        scaledSize: new google.maps.Size(28, 28),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(2, 45)
+                    };
+                } else if (dia == 'cero') {
+                    var hoy = new Date();
+                    console.log("entro al CERO:" + dia);
+                }
+                var hoyString = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+
+                var acumulador = 0
+
+                for (var i = 0; i < data.length; i++) {
+                    var date = new Date(data[i].fields.timestamp);
+                    var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+
+                    console.log("Entro en el FOR " + hoyString)
+                    if (dateString == hoyString) {
+                        acumulador += 50
+                        console.log(acumulador)
+                        marker = new google.maps.Marker({
+                            position: {
+                                lat: data[i].fields.lat,
+                                lng: data[i].fields.lon
+                            },
+                            map: map,
+                            icon: icon2,
+                            draggable: true,
+                        });
+
+                        console.log(data[i].fields.short_code)
+                        google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                            return function () {
+                                infowindow.setContent("<div style='left: " + acumulador + "px; width: 50px; height: 50px; background-color: green;  '></div>" +
+                                    "<a class='nav-link ' href='#'>Booking</a>" +
+                                    "<ul id='datoPop' class='list-group list-group-flush' >" +
+
+                                    "<li class='list-group-item'><b>timestamp:</b>" + " " + data[i].fields.timestamp + "</li>" +
+                                    "<li class='list-group-item'><b>when:</b>" + " " + data[i].fields.when + "</li>" +
+                                    "<li class='list-group-item'><b>short_code:</b>" + " " + data[i].fields.short_code + "</li>" +
+                                    "<li class='list-group-item'><b>lat:</b>" + " " + data[i].fields.lat + "</li>" +
+                                    "<li class='list-group-item'><b>lon:</b>" + " " + data[i].fields.lon + "</li>" +
+                                    "<li class='list-group-item'><b>position:</b>" + " " + data[i].fields.position + "</li>" +
+                                    "<li class='list-group-item'><b>parking_found:</b>" + " " + data[i].fields.parking_found + "</li>" +
+                                    "<li class='list-group-item'><b>selected_name:</b>" + " " + data[i].fields.selected_name + "</li>" +
+                                    "<li class='list-group-item'><b>selected_lmpPID:</b>" + " " + data[i].fields.selected_lmpPID + "</li>" +
+                                    "<li class='list-group-item'><b>trello_url:</b>" + " " + data[i].fields.trello_url + "</li>" +
+                                    "</ul>");
+                                infowindow.open(map, marker);
+                            }
+                        })(marker, i));
+
                     }
-                })(marker, i));
-            }
+                }
+                // console.log("fecha primer valor:" + dia1);
+            })
 
-        },
+        }
+        // //FECHA DE HOY CON FORMATO YY/MM/DD
+        // var hoy = new Date();
+        // var hoyString = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
+        // console.log(hoyString + "hoy")
 
     });
-}*/
+}
+
+
+function show_hide() {
+    if (document.getElementById('check_sh').checked) {
+        document.getElementById('select_sh').style.display = "block";
+    } else {
+        document.getElementById('select_sh').style.display = "none";
+    }
+}
