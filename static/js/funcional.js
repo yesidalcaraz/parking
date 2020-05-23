@@ -1,6 +1,11 @@
 var input = document.getElementById('direccion');
-var radio = 500;
-var radioExt = 800;
+var radio = 400;
+var radioExt = 700;
+var markerCluster;
+var marker_array = [];
+var marcadores = [];
+var circles = [];
+var map;
 
 function cargarMapa() {
     var madrid = {
@@ -21,11 +26,17 @@ function cargarMapa() {
             },
             fullscreenControlOptions: {
                 position: google.maps.ControlPosition.LEFT_BOTTOM,
+
             }
+
         });
+
     var marker = new google.maps.Marker({
-        map: map
+        map: map,
+
     });
+
+    
     var searchBox = new google.maps.places.SearchBox(input);
     cajabuscar(map, marker, searchBox);
 }
@@ -34,10 +45,8 @@ function cargarMapa() {
 
 
 
-
-
-function ConsultaAjax(lat, lng, map) {
-
+function ConsultaAjaxParkings(lat, lng, map) {
+    
     map.setCenter(new google.maps.LatLng(lat, lng));
 
     var circle = new google.maps.Circle({
@@ -49,6 +58,7 @@ function ConsultaAjax(lat, lng, map) {
         center: map.getCenter(),
         radius: radio,
         map: map,
+        
     });
 
     var circle = new google.maps.Circle({
@@ -60,8 +70,10 @@ function ConsultaAjax(lat, lng, map) {
         center: map.getCenter(),
         radius: radioExt,
         map: map,
+      
     });
 
+    
 
     var bounds = circle.getBounds();
 
@@ -77,22 +89,18 @@ function ConsultaAjax(lat, lng, map) {
     var maxLat = northEast.lat();
     var maxLon = northEast.lng();
 
-    /*var icon = {
-        path: fontawesome.markers.CAR,
-        scale: 0.3,
-        strokeWeight: 0.2,
-        strokeColor: 'black',
-        strokeOpacity: 1,
-        fillColor: '#a71d21',
-        fillOpacity: 0.7
-    };*/
+
 
     var icon = {
         url: "/static/img/pall.png",
-        scaledSize: new google.maps.Size(30, 20),
+        scaledSize: new google.maps.Size(28, 28),
         origin: new google.maps.Point(0, 0),
+        //anchor: new google.maps.Point(0, 32)
     };
 
+    circles.push(bounds);
+    removeCircle(circles) 
+    
     $.ajax({
 
         data: {
@@ -110,7 +118,7 @@ function ConsultaAjax(lat, lng, map) {
             console.log("consulta hecha")
             var infowindow = new google.maps.InfoWindow;
             var marker, i;
-
+            
             for (var i = 0; i < data.length; i++) {
                 marker = new google.maps.Marker({
                     position: {
@@ -118,9 +126,11 @@ function ConsultaAjax(lat, lng, map) {
                         lng: data[i].fields.lon
                     },
                     map: map,
-                    icon: icon
-                });
+                    icon: icon,
 
+                });
+               
+                
                 google.maps.event.addListener(marker, 'click', (function(marker, i) {
                     return function() {
                         infowindow.setContent("<ul class='nav nav-tabs'>" +
@@ -157,12 +167,11 @@ function ConsultaAjax(lat, lng, map) {
                             "<li class='list-group-item'><b>Booking Url:</b>" + " " + "<a target='_blank' href=" + data[i].fields.booking_url + ">" + data[i].fields.booking_url + "</a></li >" + "</ul>" + "</li>" + "</ul>");
                         infowindow.open(map, marker);
                     }
-                })(marker, i));
+                })(marker, i,markerCluster));
             }
         },
     });
 }
-
 
 
 
@@ -180,6 +189,7 @@ function ConsultaAjaxBooking(lat, lng, map) {
         center: map.getCenter(),
         radius: radio,
         map: map,
+       
     });
 
     var circle = new google.maps.Circle({
@@ -191,6 +201,7 @@ function ConsultaAjaxBooking(lat, lng, map) {
         center: map.getCenter(),
         radius: radioExt,
         map: map,
+       
     });
 
 
@@ -209,12 +220,19 @@ function ConsultaAjaxBooking(lat, lng, map) {
     var maxLon = northEast.lng();
 
     var icon2 = {
-        url: "/static/img/car.png",
-        scaledSize: new google.maps.Size(40, 42),
-        origin: new google.maps.Point(0, 0),
-        anchor: new google.maps.Point(2, 45)
+        path: fontawesome.markers.CAR,
+        scale: 0.4,
+        strokeWeight: 0.5,
+        strokeColor: 'black',
+        strokeOpacity: 1,
+        fillColor: '#a71d21',
+        fillOpacity: 0.9,
+        draggable: true,
+        title: "Puedes Moverme!"
     };
 
+    circles.push(bounds);
+    removeCircle(circles) 
     $.ajax({
 
         data: {
@@ -228,18 +246,29 @@ function ConsultaAjaxBooking(lat, lng, map) {
         success: function(data) {
             console.log("consulta hecha con BookingsliteSearchAjax")
             var infowindow = new google.maps.InfoWindow;
-            var marker, i;
-
+            var marker;
+            var marcadores= [];
             for (var i = 0; i < data.length; i++) {
                 marker = new google.maps.Marker({
                     position: {
                         lat: data[i].fields.lat,
-                        lng: data[i].fields.lon
+                        lng: data[i].fields.lon,
+
                     },
                     map: map,
-                    icon: icon2
+                    icon: icon2,
+                    draggable: true,
+
+
                 });
 
+                marcadores.push(marker);
+                var markerCluster = new MarkerClusterer(map, marcadores, {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+                    zoomOnClick: false,
+                    ignoreHiddenMarkers: true,
+                    title: "Reservas de Parkings"
+                    });
 
                 google.maps.event.addListener(marker, 'click', (function(marker, i) {
                     return function() {
@@ -260,20 +289,27 @@ function ConsultaAjaxBooking(lat, lng, map) {
                             "</ul>");
                         infowindow.open(map, marker);
                     }
-                })(marker, i));
+                })(marker, i, markerCluster));
+
             }
+
+           
         },
+    
     });
+
+    
 }
 
 
 
 
-
-
 function cajabuscar(map, marker, searchBox) {
+   
+    this.map.clean();
     map.addListener('bounds_changed', function() {
         searchBox.setBounds(map.getBounds());
+        map.setMap(null);
     });
 
     document.getElementById('miboton').onclick = function() {
@@ -284,7 +320,7 @@ function cajabuscar(map, marker, searchBox) {
 
         });
     };
-
+    
     var markers = [];
     searchBox.addListener('places_changed', function() {
         var places = searchBox.getPlaces();
@@ -306,15 +342,19 @@ function cajabuscar(map, marker, searchBox) {
 
             markers.push(new google.maps.Marker({
                 map: map,
-                position: place.geometry.location
+                position: place.geometry.location,
+                draggable: true,
             }));
-
+            
+           
             if (place.geometry.viewport) {
-
+                
                 console.log(" entro al if del geometry buscador");
                 bounds.union(place.geometry.viewport);
                 console.log(bounds)
                 marker.setMap(map);
+                
+               
             } else {
                 console.log("Else geometry buscador");
                 bounds.extend(place.geometry.location);
@@ -324,25 +364,19 @@ function cajabuscar(map, marker, searchBox) {
             var lng = place.geometry.location.lng();
             console.log("latitiud y longitud" + lat + lng);
 
-            ConsultaAjax(lat, lng, map);
+            ConsultaAjaxParkings(lat, lng, map);
+            
             ConsultaAjaxBooking(lat, lng, map);
-            ConsultaHoy(lat, lng, map);
+            
+            ConsultaFechas(lat, lng, map);
+           
+
         });
     });
 }
 
 
-
-
-
-
-
-
-
-
-
-
-function ConsultaHoy(lat, lng, map) {
+function ConsultaFechas(lat, lng, map) {
 
 
     map.setCenter(new google.maps.LatLng(lat, lng));
@@ -357,6 +391,7 @@ function ConsultaHoy(lat, lng, map) {
         center: map.getCenter(),
         radius: radio,
         map: map,
+        
     });
 
     var circle = new google.maps.Circle({
@@ -368,9 +403,10 @@ function ConsultaHoy(lat, lng, map) {
         center: map.getCenter(),
         radius: radioExt,
         map: map,
+        
     });
 
-
+    bound=[];
     var bounds = circle.getBounds();
 
     map.fitBounds(bounds);
@@ -385,6 +421,8 @@ function ConsultaHoy(lat, lng, map) {
     var maxLat = northEast.lat();
     var maxLon = northEast.lng();
 
+    circles.push(bound);
+    
 
     $.ajax({
 
@@ -397,116 +435,161 @@ function ConsultaHoy(lat, lng, map) {
         url: '/BookingsliteSearchAjax/',
         type: 'get',
         success: function(data) {
-                console.log("consulta hecha con Bookingtime")
-                var infowindow = new google.maps.InfoWindow;
-                var marker;
-
-                $('#select_sh').change(function() {
-                    var dia = $('#select_sh').val();
-                    marker.forEach(function(marker) {
-                        marker.setMap(null);
-                    });                 
+            console.log("consulta hecha con Bookingtime")
+            var infowindow = new google.maps.InfoWindow;
+            var marker;
 
 
 
+            $('#select_sh').on('change', function() {
+                DeleteBooking()
+                var dia = $('#select_sh').val();
 
-                    if (dia == 'uno') {
-                        var hoy = new Date();
-                        console.log("entro al IF del dia uno:" + dia);
-                        var icon2 = {
-                            url: "/static/img/carHoy.png",
-                            scaledSize: new google.maps.Size(40, 42),
-                            origin: new google.maps.Point(0, 0),
-                            anchor: new google.maps.Point(2, 45)
-                        };
-                    } else if (dia == 'dos') {
-                        var Hoy = new Date();
-                        var hoy = new Date(Hoy.getTime() - 24 * 60 * 60 * 1000);
-                        console.log("entro al IF del dia dos:" + hoy);
-                        var icon2 = {
-                            url: "/static/img/carAyer.png",
-                            scaledSize: new google.maps.Size(40, 42),
-                            origin: new google.maps.Point(0, 0),
-                            anchor: new google.maps.Point(2, 45)
-                        };
+                var icon2 = {
+                    path: fontawesome.markers.CAR,
+                    scale: 0.4,
+                    strokeWeight: 0.7,
+                    strokeColor: 'black',
+                    strokeOpacity: 1,
+                    fillColor: '#37FA40',
+                    fillOpacity: 0.7
+                };
 
-                    } else if (dia == 'tres') {
-                        var Hoy = new Date();
-                        var hoy = new Date((Hoy.getTime() - 24 * 60 * 60 * 1000) - 24 * 60 * 60 * 1000);
-                        console.log("entro al IF del tres:" + hoy);
-                        var icon2 = {
-                            url: "/static/img/carTresdias.png",
-                            scaledSize: new google.maps.Size(40, 42),
-                            origin: new google.maps.Point(0, 0),
-                            anchor: new google.maps.Point(2, 45)
-                        };
-                    } else if (dia == 'cero') {
-                        var hoy = new Date();
-                        console.log("entro al CERO:" + dia);
-                    }
+
+                if (dia == 'uno') {
+                    
+                    var hoy = new Date();
+                    console.log("entro al IF del dia uno:" + dia);
+                    icon2.fillColor = '#37FA40';
                     var hoyString = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 
-                    var acumulador = 0
+                } else if (dia == 'dos') {
 
-                    for (var i = 0; i < data.length; i++) {
-                        var date = new Date(data[i].fields.timestamp);
-                        var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                    var Hoy = new Date();
+                    var hoy = new Date(Hoy.getTime() - 24 * 60 * 60 * 1000);
+                    console.log("entro al IF del dia dos:" + hoy);
+                    icon2.fillColor = '#FCF32A';
+                    var hoyString = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 
-                        console.log("Entro en el FOR " + hoyString)
-                        if (dateString == hoyString) {
-                            acumulador += 50
-                            console.log(acumulador)
-                            marker = new google.maps.Marker({
-                                position: {
-                                    lat: data[i].fields.lat,
-                                    lng: data[i].fields.lon
-                                },
-                                map: map,
-                                icon: icon2
-                            });
-                            console.log(data[i].fields.short_code)
-                            google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                                return function() {
-                                    infowindow.setContent("<div style='left: " + acumulador + "px; width: 50px; height: 50px; background-color: green;  '></div>" +
-                                        "<a class='nav-link ' href='#'>Booking</a>" +
-                                        "<ul id='datoPop' class='list-group list-group-flush' >" +
+                } else if (dia == 'tres') {
 
-                                        "<li class='list-group-item'><b>timestamp:</b>" + " " + data[i].fields.timestamp + "</li>" +
-                                        "<li class='list-group-item'><b>when:</b>" + " " + data[i].fields.when + "</li>" +
-                                        "<li class='list-group-item'><b>short_code:</b>" + " " + data[i].fields.short_code + "</li>" +
-                                        "<li class='list-group-item'><b>lat:</b>" + " " + data[i].fields.lat + "</li>" +
-                                        "<li class='list-group-item'><b>lon:</b>" + " " + data[i].fields.lon + "</li>" +
-                                        "<li class='list-group-item'><b>position:</b>" + " " + data[i].fields.position + "</li>" +
-                                        "<li class='list-group-item'><b>parking_found:</b>" + " " + data[i].fields.parking_found + "</li>" +
-                                        "<li class='list-group-item'><b>selected_name:</b>" + " " + data[i].fields.selected_name + "</li>" +
-                                        "<li class='list-group-item'><b>selected_lmpPID:</b>" + " " + data[i].fields.selected_lmpPID + "</li>" +
-                                        "<li class='list-group-item'><b>trello_url:</b>" + " " + data[i].fields.trello_url + "</li>" +
-                                        "</ul>");
-                                    infowindow.open(map, marker);
-                                }
-                            })(marker, i));
-                        }
+                    var Hoy = new Date();
+                    var hoy = new Date((Hoy.getTime() - 24 * 60 * 60 * 1000) - 24 * 60 * 60 * 1000);
+                    console.log("entro al IF del tres:" + hoy);
+                    icon2.fillColor = '#ED4F06';
+                    var hoyString = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+
+
+                }  
+                
+                               
+                else if (dia == 'cero') {
+
+                    var hoy = new Date();
+                    console.log("entro al CERO:" + dia);
+
+                }
+                
+
+                
+                for (var i = 0; i < data.length; i++) {
+
+                    var date = new Date(data[i].fields.timestamp);
+                    var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+
+                    console.log("Entro en el FOR " + hoyString)
+                    if (dateString == hoyString) {
+
+                        marker = new google.maps.Marker({
+                            position: {
+                                lat: data[i].fields.lat,
+                                lng: data[i].fields.lon
+                            },
+                            map: map,
+                            icon: icon2,
+                            draggable: true,
+                        });
+
+                        marcadores.push(marker);
+                       
+                        console.log(data[i].fields.short_code)
+                        google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                            return function() {
+                                infowindow.setContent(
+                                    "<a class='nav-link ' href='#'>Booking</a>" +
+                                    "<ul id='datoPop' class='list-group list-group-flush' >" +
+
+                                    "<li class='list-group-item'><b>timestamp:</b>" + " " + data[i].fields.timestamp + "</li>" +
+                                    "<li class='list-group-item'><b>when:</b>" + " " + data[i].fields.when + "</li>" +
+                                    "<li class='list-group-item'><b>short_code:</b>" + " " + data[i].fields.short_code + "</li>" +
+                                    "<li class='list-group-item'><b>lat:</b>" + " " + data[i].fields.lat + "</li>" +
+                                    "<li class='list-group-item'><b>lon:</b>" + " " + data[i].fields.lon + "</li>" +
+                                    "<li class='list-group-item'><b>position:</b>" + " " + data[i].fields.position + "</li>" +
+                                    "<li class='list-group-item'><b>parking_found:</b>" + " " + data[i].fields.parking_found + "</li>" +
+                                    "<li class='list-group-item'><b>selected_name:</b>" + " " + data[i].fields.selected_name + "</li>" +
+                                    "<li class='list-group-item'><b>selected_lmpPID:</b>" + " " + data[i].fields.selected_lmpPID + "</li>" +
+                                    "<li class='list-group-item'><b>trello_url:</b>" + " " + data[i].fields.trello_url + "</li>" +
+                                    "</ul>");
+                                infowindow.open(map, marker);
+                            }
+                        })(marker, i));
+
                     }
-                })
+                }
 
-            }
+            })
+
+        }
+
     });
 }
 
+function DeleteBooking() {
+    if (marcadores.length) {
+        for (i = 0; i < marcadores.length; i++) {
+            marcadores[i].setMap(null);
+            
+        }
+        marcadores = []
+        
+    }
+}
 
 
+function removeCircle(circles) {
+    // remove whatever is there
+    marcadores.circle.setMap(null);
+  
+    var icon = {
+      url: circles.originalpin,
+      scaledSize: new google.maps.Size(22, 32)
+    }
+    // reset the marker icon 
+    circles.icon = icon;
+  
+    //sets the marker back
+    circles.circle.setMap(map);
+  
+    // NOW REMOVE the circle:
+    // So at this point I am stuck.  I have bound a circle to
+    // the marker but in order to REMOVE the circle I need a 
+    // reference to it.  Other SO postings suggest acting on the 
+    // circle object directly like so:
+  
+    circles.circle.setMap(null);
+    
+  
+    // but the "circle" doesn't exist here. It was bound to the marker in another function.  I need a reference to the circle that was bound to the marker so I can act on it.
+  }
 
-
-
-function muestraOculta(parrafo,enla) {
+function muestraOculta(parrafo, enla) {
     var elemento = document.getElementById(parrafo);
     var enlace = document.getElementById(enla);
     if (elemento.style.display != "none") {
         elemento.style.display = "none";
-        enlace.innerHTML = "<div><i class='fas fa-chevron-down' style='color:#a71d21;'></i></div>";
-        }
-    else{
+        enlace.innerHTML = "<div><i class='fas fa-chevron-down'></i>Ver días</div>";
+    } else {
         elemento.style.display = "block"
         enlace.innerHTML = "<div><i class='fas fa-chevron-up' style='color:#a71d21;'></i></div>";
-        }
+    }
 }
