@@ -1,6 +1,6 @@
 var input = document.getElementById('direccion');
-var radio = 500;
-var radioExt = 800;
+var radio = 400;
+var radioExt = 700;
 var markerCluster;
 var marker_array = [];
 var marcadores = [];
